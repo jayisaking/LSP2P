@@ -5,6 +5,12 @@ import argparse
 import pickle
 import torch
 def get_args_parser():
+
+    # In this code, `argparse.ArgumentParser` is used to create an argument parser object. The
+    # `add_argument` method is then used to specify the arguments that the script can accept. Each
+    # argument is defined with a name, a default value, and a help string that describes what the
+    # argument does. When the script is run, the argument parser reads the command-line arguments and
+    # converts them into Python objects that can be used in the script.
     parser = argparse.ArgumentParser('Train Gossip Learning Based on PMF', add_help = True)
     parser.add_argument('--user_item_pairs_path', default = './book_ratings.pickle', help = 'pickle file contains list of [user id, item id, rating] (this parameter is required)')
     parser.add_argument('--update_epochs', default = 100, help = 'update epochs for each call to PMF train')
@@ -15,9 +21,15 @@ def get_args_parser():
     parser.add_argument('--node_number', default = 10, help = 'the number of nodes')
     parser.add_argument('--device', default = 'cuda')
     parser.add_argument('--train_set_size', default = 0.8)
+    parser.add_argument('--transmission_graph_file', default = 'trans.png')
+    parser.add_argument('--rmse_graph_file', default = 'rmses.png')
     args = parser.parse_args()
     return args
 def main(args):
+    # This code block is loading a pickled file containing a list of user-item pairs and their
+    # corresponding ratings. The `with open(args.user_item_pairs_path, 'rb') as f:` statement opens
+    # the file in binary read mode and assigns it to the variable `f`. The `pickle.load(f)` method is
+    # then used to load the contents of the file into the variable `pairs`.
     with open(args.user_item_pairs_path, 'rb') as f:
         pairs = pickle.load(f)
     device = torch.device(args.device)
@@ -28,13 +40,13 @@ def main(args):
     plt.plot(np.arange(1, len(gl.transmission) + 1), gl.transmission)
     plt.xlabel("Epoch")
     plt.ylabel("Bytes Transmitted")
-    plt.savefig('trans.png')
+    plt.savefig(args.transmission_graph_file)
     plt.clf()
 
     plt.plot(np.arange(1, len(gl.rmses) + 1), gl.rmses)
     plt.xlabel("Epoch")
     plt.ylabel("RMSE")
-    plt.savefig('rmses.png')
+    plt.savefig(args.rmse_graph_file)
     plt.clf()
 if __name__ == '__main__':
     main(get_args_parser())

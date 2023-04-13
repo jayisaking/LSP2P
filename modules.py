@@ -8,6 +8,14 @@ import sys
 
 class GossipLearning(nn.Module):
     def __init__(self, user_item_pairs: list, latent_dim = 500, update_epochs = 100, lr = 1e-4, probs_for_send = 0.5, node_number = 10, device = torch.device('cuda'), train_set_size = 0.8) -> None:
+        # `super(GossipLearning, self).__init__()` is calling the constructor of the parent class
+        # `nn.Module` to initialize the `GossipLearning` object. This is necessary because
+        # `GossipLearning` is a subclass of `nn.Module` and needs to inherit its properties and
+        # methods. The rest of the code block initializes various attributes of the `GossipLearning`
+        # object, such as the user-item pairs, the number of nodes, the latent dimension, the update
+        # epochs, the learning rate, and the device. It also creates a list of `Node` objects and
+        # assigns them to the `nodes` attribute of the `GossipLearning` object. Finally, it sets the
+        # `nodes` attribute of each `Node` object to the list of all `Node` objects in the network.
         super(GossipLearning, self).__init__()
         ## user_item_pairs = [username, itemname, rating]
         random.shuffle(user_item_pairs)
@@ -39,6 +47,7 @@ class GossipLearning(nn.Module):
         self.transmission = []
         with tqdm(total = epoches) as t:
             for epoch in range(epoches):
+                # This code block is the main training loop for the Gossip Learning algorithm.
                 temp_rmse = 0
                 temp_transmission = 0
                 for node in self.nodes:
@@ -65,6 +74,14 @@ class Node(nn.Module):
         self.device = device
         self.model.train(epochs = self.update_epochs, learning_rate = self.lr, device = device)
     def send_model(self):
+        # This code block is responsible for sending the model parameters (U, V, age) to neighboring
+        # nodes in the Gossip Learning algorithm. It loops through all the nodes in the network, and
+        # for each node, it checks if a random number generated from a uniform distribution is greater
+        # than the probability of sending (probs_send) and if the node is not the current node. If the
+        # condition is satisfied, it calls the receive_model method of the neighboring node, passing
+        # the current node's model parameters (U, V, age) as arguments. It also calculates the
+        # transmission quantity by adding the size of the U, V, and age tensors using the
+        # sys.getsizeof() function. Finally, it returns the total transmission quantity.
         transmission_quantity = 0
         for node in self.nodes:
             if np.random.random() > self.probs_send and node.id != self.id:
@@ -74,6 +91,11 @@ class Node(nn.Module):
     def update(self):
         self.model.train(epochs = self.update_epochs, learning_rate = self.lr)
     def receive_model(self, U, V, age):
+        # `self.merge(U, V, age)` is a method in the `Node` class that merges the model parameters of
+        # the current node with the model parameters received from a neighboring node. It calculates
+        # the proportion of the age of the received model parameters to the sum of the ages of the
+        # received and current model parameters, and uses this proportion to update the current node's
+        # model parameters.
         self.merge(U, V, age)
         self.update()
     def merge(self, U, V, age):
@@ -115,6 +137,9 @@ class PMF(nn.Module):
         self.u_std = self.u_std.to(device)
         self.v_std = self.v_std.to(device)
     def train(self, epochs, learning_rate = 1e-4, device = torch.device('cuda')):
+       # This is the training method for the PMF (Probabilistic Matrix Factorization) model. It takes
+       # in the number of epochs to train for (`epochs`), the learning rate (`learning_rate`), and the
+       # device to use (`device`).
         self.epochs = epochs
         self.learning_rate = learning_rate
         self.optimizer = torch.optim.Adam(self.parameters(), lr = learning_rate)
@@ -128,14 +153,6 @@ class PMF(nn.Module):
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-            # self.gradient_descent()
-            # assert(self.compute_loss() < loss)
-    # def gradient_descent(self):
-        # self.prev_gradient = self.gradient
-        # self.gradient = [self.learning_rate * (np.matmul(self.I * (self.R - np.matmul(self.U, self.V.T)), self.V * -1) / (self.r_std ** 2) + self.U / (self.u_std ** 2)) + self.momentum * self.prev_gradient[0],
-        #                  self.learning_rate * (np.matmul((self.I * (self.R - np.matmul(self.U, self.V.T))).T, self.U * -1) / (self.r_std ** 2) + self.V / (self.v_std ** 2)) + self.momentum * self.prev_gradient[1]]
-        # self.U = self.U - self.gradient[0]
-        # self.V = self.V - self.gradient[1]
     def compute_loss(self) -> torch.Tensor:
         return torch.norm((self.I * (self.R - self.U @ self.V.T)), p = 2) / (2 * self.r_std ** 2) + torch.norm(self.U) / (2 * self.u_std[0] ** 2) + torch.norm(self.V) / (2 * self.v_std[0] ** 2)
     @torch.no_grad()
