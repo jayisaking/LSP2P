@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import argparse
 import pickle
 import torch
+import random
+
 def get_args_parser():
 
     # In this code, `argparse.ArgumentParser` is used to create an argument parser object. The
@@ -13,6 +15,7 @@ def get_args_parser():
     # converts them into Python objects that can be used in the script.
     parser = argparse.ArgumentParser('Train Gossip Learning Based on PMF', add_help = True)
     parser.add_argument('--user_item_pairs_path', default = './book_ratings.pickle', help = 'pickle file contains list of [user id, item id, rating] (this parameter is required)')
+    parser.add_argument('--used_data_size', default = 1, help = 'the propotion of pairs you want to use')
     parser.add_argument('--update_epochs', default = 100, help = 'update epochs for each call to PMF train')
     parser.add_argument('--epochs', default = 100, help = 'epoches for gossip learning')
     parser.add_argument('--latent_dim', default = 500, help = 'latent dim for PMF')
@@ -23,6 +26,7 @@ def get_args_parser():
     parser.add_argument('--train_set_size', default = 0.8)
     parser.add_argument('--transmission_graph_file', default = 'trans.png')
     parser.add_argument('--rmse_graph_file', default = 'rmses.png')
+    
     args = parser.parse_args()
     return args
 def main(args):
@@ -32,6 +36,8 @@ def main(args):
     # then used to load the contents of the file into the variable `pairs`.
     with open(args.user_item_pairs_path, 'rb') as f:
         pairs = pickle.load(f)
+    random.shuffle(pairs)
+    pairs = pairs[:int(len(pairs) * args.used_data_size)]
     device = torch.device(args.device)
     gl = GossipLearning(user_item_pairs = pairs, latent_dim = args.latent_dim, update_epochs = args.update_epochs,
                         lr = args.lr, probs_for_send = args.probs_for_send, node_number = args.node_number, device = device, train_set_size = args.train_set_size)
