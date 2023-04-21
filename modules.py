@@ -7,7 +7,8 @@ import numpy as np
 import sys
 
 class GossipLearning(nn.Module):
-    def __init__(self, user_item_pairs: list, latent_dim = 500, update_epochs = 100, lr = 1e-4, probs_for_send = 0.5, node_number = 10, device = torch.device('cuda'), train_set_size = 0.8) -> None:
+    def __init__(self, user_item_pairs: list, latent_dim = 500, update_epochs = 100, lr = 1e-4, probs_for_send = 0.5, node_number = 10, device = torch.device('cuda'), 
+                train_set_size = 0.8, momentum = 0, weight_decay = 0) -> None:
         # `super(GossipLearning, self).__init__()` is calling the constructor of the parent class
         # `nn.Module` to initialize the `GossipLearning` object. This is necessary because
         # `GossipLearning` is a subclass of `nn.Module` and needs to inherit its properties and
@@ -35,7 +36,8 @@ class GossipLearning(nn.Module):
         self.rmses = []
         for id in tqdm(range(node_number), desc = 'Generating Nodes'):
             self.nodes.append(Node(id, latent_dim = latent_dim, user_dim = len(self.users), item_dim = len(self.items), R = self.create_R(self.train_pairs[int(id * (len(self.train_pairs) / node_number)): int((id + 1) * (len(self.train_pairs) / node_number))]), 
-                                    R_test = self.R_test, nodes = [], update_epochs = self.update_epochs, lr = self.lr, probs_for_send = self.probs_for_send, device = device).to(device))
+                                    R_test = self.R_test, nodes = [], update_epochs = self.update_epochs, lr = self.lr, probs_for_send = self.probs_for_send, device = device,
+                                    momentum = momentum, weight_decay = weight_decay).to(device))
         for id in range(node_number):
             self.nodes[id].nodes = self.nodes
     def create_R(self, pairs: list):
@@ -61,11 +63,11 @@ class GossipLearning(nn.Module):
                 self.transmission.append(temp_transmission)
         self.transmission = np.cumsum(self.transmission)
 class Node(nn.Module):
-    def __init__(self, id, latent_dim, user_dim, item_dim, R: np.array, R_test: np.array, nodes, update_epochs = 100, lr = 1e-4, probs_for_send = 0.5, device = torch.device('cuda')) -> None:
+    def __init__(self, id, latent_dim, user_dim, item_dim, R: np.array, R_test: np.array, nodes, update_epochs = 100, lr = 1e-4, probs_for_send = 0.5, device = torch.device('cuda'), momentum = 0, weight_decay = 0) -> None:
         super(Node, self).__init__()
         self.age = 0
         self.id = id
-        self.model = PMF(latent_dim, user_dim, item_dim, R, R_test)
+        self.model = PMF(latent_dim, user_dim, item_dim, R, R_test, momentum = momentum, weight_decay = weight_decay)
         self.model.to(device)
         self.nodes = nodes # neighbor node
         self.update_epochs = update_epochs
@@ -106,7 +108,7 @@ class Node(nn.Module):
     def add_node(self, node):
         self.nodes.append(node)
 class PMF(nn.Module):
-    def __init__(self, latent_dim, user_dim, item_dim, R: np.array, R_test: np.array) -> None:
+    def __init__(self, latent_dim, user_dim, item_dim, R: np.array, R_test: np.array, momentum, weight_decay) -> None:
         super(PMF, self).__init__()
         self.user_dim = user_dim
         self.item_dim = item_dim
@@ -126,6 +128,8 @@ class PMF(nn.Module):
         self.losses = []
         self.rmses = []
         self.age = 0
+        self.momentum = momentum
+        self.weight_decay = weight_decay
     def to_device(self, device = torch.device('cuda')):
         self.I = self.I.to(device)
         self.R = self.R.to(device)
@@ -142,7 +146,7 @@ class PMF(nn.Module):
        # device to use (`device`).
         self.epochs = epochs
         self.learning_rate = learning_rate
-        self.optimizer = torch.optim.Adam(self.parameters(), lr = learning_rate)
+        self.optimizer = torch.optim.SGD(self.parameters(), lr = learning_rate, momentum = self.momentum, weight_decay = self.weight_decay)
         self.to_device(device)
         for epoch in range(epochs):
             self.age += torch.sum(self.I)

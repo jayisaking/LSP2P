@@ -26,7 +26,8 @@ def get_args_parser():
     parser.add_argument('--train_set_size', default = 0.8)
     parser.add_argument('--transmission_graph_file', default = 'trans.png')
     parser.add_argument('--rmse_graph_file', default = 'rmses.png')
-    
+    parser.add_argument('--momentum', default = 0, help = "momentum for SGD")
+    parser.add_argument('--weight_decay', default = 0, help = "weight decay (l2 penalty) for SGD")
     args = parser.parse_args()
     return args
 def main(args):
@@ -40,7 +41,8 @@ def main(args):
     pairs = pairs[:int(len(pairs) * args.used_data_size)]
     device = torch.device(args.device)
     gl = GossipLearning(user_item_pairs = pairs, latent_dim = args.latent_dim, update_epochs = args.update_epochs,
-                        lr = args.lr, probs_for_send = args.probs_for_send, node_number = args.node_number, device = device, train_set_size = args.train_set_size)
+                        lr = args.lr, probs_for_send = args.probs_for_send, node_number = args.node_number, device = device, 
+                        train_set_size = args.train_set_size, momentum = args.momentum, weight_decay = weight_decay)
     gl.train(epoches = args.epochs)
 
     plt.plot(np.arange(1, len(gl.transmission) + 1), gl.transmission)
