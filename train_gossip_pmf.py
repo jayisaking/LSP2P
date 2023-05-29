@@ -43,7 +43,7 @@ def main(args):
     gl = GossipLearning(user_item_pairs = pairs, latent_dim = args.latent_dim, update_epochs = args.update_epochs,
                         lr = args.lr, probs_for_send = args.probs_for_send, node_number = args.node_number, device = device, 
                         train_set_size = args.train_set_size, momentum = args.momentum, weight_decay = args.weight_decay)
-    gl.train(epoches = args.epochs)
+    gl.train(epochs = args.epochs)
 
     plt.plot(np.arange(1, len(gl.transmission) + 1), gl.transmission)
     plt.xlabel("Epoch")
