@@ -250,6 +250,7 @@ class LSP2P(nn.Module):
                 for node in self.nodes:
                     temp_rmse += node.model.rmse().item()
                 self.rmses.append(temp_rmse / len(self.nodes)) 
+                t.set_postfix(loss = temp_rmse / len(self.nodes))
                 temp_rmse = 0
                 for node in self.nodes:
                     temp_transmission += (node.send_model())
@@ -263,9 +264,9 @@ class LSP2P(nn.Module):
                 temp_V = None
                 with torch.no_grad():
                     for node in self.nodes:
+                        u = node.model.U.detach().clone()
+                        v = node.model.V.detach().clone()
                         if temp_U is None:
-                            u = node.model.U.detach().clone()
-                            v = node.model.V.detach().clone()
                             temp_U = u
                             temp_V = v
                         else:
