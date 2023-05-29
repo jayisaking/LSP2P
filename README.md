@@ -32,7 +32,7 @@ First install python and pip package and download the dependencies
 1. Start training
    
    ```shell
-   python train_gossip_pmf.py
+   python train_lsp2p_pmf.py
    ```
 
 2. If you don't know what args to give, type
@@ -44,7 +44,7 @@ First install python and pip package and download the dependencies
     Node number : 10
 
     Epoch : 100
-    
+
     ![transmission](lsp2p_trans.png)
 
     ![rmse](lsp2p_rmses.png)
