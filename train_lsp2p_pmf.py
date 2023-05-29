@@ -24,10 +24,11 @@ def get_args_parser():
     parser.add_argument('--node_number', default = 10, help = 'the number of nodes')
     parser.add_argument('--device', default = 'cuda')
     parser.add_argument('--train_set_size', default = 0.8)
-    parser.add_argument('--transmission_graph_file', default = 'trans.png')
-    parser.add_argument('--rmse_graph_file', default = 'rmses.png')
+    parser.add_argument('--transmission_graph_file', default = 'lsp2p_trans.png')
+    parser.add_argument('--rmse_graph_file', default = 'lsp2p_rmses.png')
     parser.add_argument('--momentum', default = 0, help = "momentum for SGD")
     parser.add_argument('--weight_decay', default = 0, help = "weight decay (l2 penalty) for SGD")
+    parser.add_argument('--cluster_number', default = 2, help = "number of clusters")
     args = parser.parse_args()
     return args
 def main(args):
@@ -40,18 +41,18 @@ def main(args):
     random.shuffle(pairs)
     pairs = pairs[:int(len(pairs) * args.used_data_size)]
     device = torch.device(args.device)
-    gl = GossipLearning(user_item_pairs = pairs, latent_dim = args.latent_dim, update_epochs = args.update_epochs,
-                        lr = args.lr, probs_for_send = args.probs_for_send, node_number = args.node_number, device = device, 
-                        train_set_size = args.train_set_size, momentum = args.momentum, weight_decay = args.weight_decay)
-    gl.train(epoches = args.epochs)
+    lsp2p = LSP2P(user_item_pairs = pairs, latent_dim = args.latent_dim, update_epochs = args.update_epochs, lr = args.lr, 
+                  probs_for_send = args.probs_for_send, node_number = args.node_number, device = device, train_set_size = args.train_set_size, 
+                  momentum = args.momentum, weight_decay = args.weight_decay, cluster_number = args.cluster_number)
+    lsp2p.train(epoches = args.epochs)
 
-    plt.plot(np.arange(1, len(gl.transmission) + 1), gl.transmission)
+    plt.plot(np.arange(1, len(lsp2p.transmission) + 1), lsp2p.transmission)
     plt.xlabel("Epoch")
     plt.ylabel("Bytes Transmitted")
     plt.savefig(args.transmission_graph_file)
     plt.clf()
 
-    plt.plot(np.arange(1, len(gl.rmses) + 1), gl.rmses)
+    plt.plot(np.arange(1, len(lsp2p.rmses) + 1), lsp2p.rmses)
     plt.xlabel("Epoch")
     plt.ylabel("RMSE")
     plt.savefig(args.rmse_graph_file)
