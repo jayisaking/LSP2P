@@ -272,7 +272,7 @@ class LSP2P(nn.Module):
                     temp_V /= len(self.nodes)
                 temp_transmission += sys.getsizeof(temp_U) + sys.getsizeof(temp_V)
                 for node in self.nodes:
-                    node.merge(temp_U, temp_V, node.model.age * 2)
+                    node.merge(temp_U, temp_V, node.model.age / 100)
                 self.transmission.append(temp_transmission)
         self.transmission = np.cumsum(self.transmission)
     
