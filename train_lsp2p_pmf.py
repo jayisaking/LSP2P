@@ -29,6 +29,7 @@ def get_args_parser():
     parser.add_argument('--momentum', default = 0, help = "momentum for SGD", type = float)
     parser.add_argument('--weight_decay', default = 0, help = "weight decay (l2 penalty) for SGD", type = float)
     parser.add_argument('--cluster_number', default = 2, help = "number of clusters", type = int)
+    parser.add_argument('--log_file', default = "lsp2p_log.csv", type = str)
     args = parser.parse_args()
     return args
 def main(args):
@@ -57,5 +58,9 @@ def main(args):
     plt.ylabel("RMSE")
     plt.savefig(args.rmse_graph_file)
     plt.clf()
+    
+    # Write rmses and transmission to log file
+    log = pd.DataFrame({"rmses": lsp2p.rmses, "transmission": lsp2p.transmission})
+    log.to_csv(args.log_file, index = False)
 if __name__ == '__main__':
     main(get_args_parser())

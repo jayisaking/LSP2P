@@ -28,6 +28,7 @@ def get_args_parser():
     parser.add_argument('--rmse_graph_file', default = 'rmses.png')
     parser.add_argument('--momentum', default = 0, help = "momentum for SGD")
     parser.add_argument('--weight_decay', default = 0, help = "weight decay (l2 penalty) for SGD")
+    parser.add_argument('--log_file', default = "gossip_log.csv", type = str)
     args = parser.parse_args()
     return args
 def main(args):
@@ -56,5 +57,10 @@ def main(args):
     plt.ylabel("RMSE")
     plt.savefig(args.rmse_graph_file)
     plt.clf()
+    
+    ## write rmses and transmission to csv file
+    df = pd.DataFrame({'transmission': gl.transmission, 'rmses': gl.rmses})
+    df.to_csv(args.log_file, index = False)
+    
 if __name__ == '__main__':
     main(get_args_parser())
