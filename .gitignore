@@ -6,3 +6,5 @@ R.npy
 Ratings.csv
 test.ipynb
 test.py
+.*.icloud
+*.csv

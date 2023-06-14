@@ -249,7 +249,6 @@ class LSP2P(nn.Module):
                 # first update the nodes in each cluster by gossip learning
                 for node in self.nodes:
                     temp_rmse += node.model.rmse().item()
-                self.rmses.append(temp_rmse / len(self.nodes)) 
                 t.set_postfix(loss = temp_rmse / len(self.nodes))
                 temp_rmse = 0
                 for node in self.nodes:
