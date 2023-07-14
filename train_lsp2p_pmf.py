@@ -30,6 +30,7 @@ def get_args_parser():
     parser.add_argument('--weight_decay', default = 0, help = "weight decay (l2 penalty) for SGD", type = float)
     parser.add_argument('--cluster_number', default = 2, help = "number of clusters", type = int)
     parser.add_argument('--log_file', default = "lsp2p_log.csv", type = str)
+    parser.add_argument('--evaluate_every', default = 5, help = "evaluate every n seconds", type = int)
     args = parser.parse_args()
     return args
 def main(args):
@@ -47,20 +48,20 @@ def main(args):
                   momentum = args.momentum, weight_decay = args.weight_decay, cluster_number = args.cluster_number)
     lsp2p.train(epochs = args.epochs)
 
-    plt.plot(np.arange(1, len(lsp2p.transmission) + 1), lsp2p.transmission)
-    plt.xlabel("Epoch")
+    plt.plot(np.arange(0, len(lsp2p.regular_transmission) * args.evaluate_every, args.evaluate_every), lsp2p.regular_transmission)
+    plt.xlabel("Seconds")
     plt.ylabel("Bytes Transmitted")
     plt.savefig(args.transmission_graph_file)
     plt.clf()
 
-    plt.plot(np.arange(1, len(lsp2p.rmses) + 1), lsp2p.rmses)
-    plt.xlabel("Epoch")
+    plt.plot(np.arange(0, len(lsp2p.regular_rmses) * args.evaluate_every, args.evaluate_every), lsp2p.regular_rmses)
+    plt.xlabel("Seconds")
     plt.ylabel("RMSE")
     plt.savefig(args.rmse_graph_file)
     plt.clf()
     
     # Write rmses and transmission to log file
-    log = pd.DataFrame({"rmses": lsp2p.rmses, "transmission": lsp2p.transmission})
+    log = pd.DataFrame({"rmses": lsp2p.regular_rmses, "transmission": lsp2p.regular_transmission})
     log.to_csv(args.log_file, index = False)
 if __name__ == '__main__':
     main(get_args_parser())

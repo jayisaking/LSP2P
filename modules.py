@@ -5,6 +5,8 @@ from tqdm import tqdm
 import random
 import numpy as np
 import sys
+import threading
+import time
 
 class GossipLearning(nn.Module):
     def __init__(self, user_item_pairs: list, latent_dim = 500, update_epochs = 100, lr = 1e-4, probs_for_send = 0.5, node_number = 10, device = torch.device('cuda'), 
@@ -47,6 +49,9 @@ class GossipLearning(nn.Module):
         return R
     def train(self, epochs = 100):
         self.transmission = []
+        self.regular_rmses = []
+        self.regular_transmission = []
+        th = threading.Thread(target = execute_every, args = (self, evaluate_every, self.regular_rmses, self.regular_transmission, "GossipLearning"))
         with tqdm(total = epochs) as t:
             for epoch in range(epochs):
                 # This code block is the main training loop for the Gossip Learning algorithm.
@@ -84,12 +89,14 @@ class Node(nn.Module):
         # the current node's model parameters (U, V, age) as arguments. It also calculates the
         # transmission quantity by adding the size of the U, V, and age tensors using the
         # sys.getsizeof() function. Finally, it returns the total transmission quantity.
-        transmission_quantity = 0 # bytes recording the transmission amount
+        self.transmission_quantity = 0 # bytes recording the transmission amount
+        
         for node in self.nodes:
             if np.random.random() > self.probs_send and node.id != self.id: # if the random number is greater than the probability of sending and the node is not the current node, send the model to the neighboring node
                 node.receive_model(self.model.U, self.model.V, self.model.age) # receive model from the neighboring node, and update the current node's model
                 transmission_quantity += (sys.getsizeof(self.model.U) + sys.getsizeof(self.model.V) + sys.getsizeof(self.model.age)) # update the total transmission quantity
-        return transmission_quantity
+                
+        return self.transmission_quantity
     def update(self):
         self.model.train(epochs = self.update_epochs, learning_rate = self.lr, device = self.device)
     def receive_model(self, U, V, age):
@@ -111,8 +118,8 @@ class PMF(nn.Module):
         self.user_dim = user_dim
         self.item_dim = item_dim
         self.latent_dim = latent_dim
-        self.U = nn.parameter.Parameter(torch.randn((user_dim, latent_dim)))
-        self.V = nn.parameter.Parameter(torch.randn((item_dim, latent_dim)))
+        self.U = nn.parameter.Parameter(torch.zeros((user_dim, latent_dim)))
+        self.V = nn.parameter.Parameter(torch.zeros((item_dim, latent_dim)))
         self.R = torch.tensor(R, requires_grad = False)
         self.I = (self.R >= 0).to(torch.int32)
         self.I.requires_grad = False
@@ -161,6 +168,39 @@ class PMF(nn.Module):
     def rmse(self): # loss for testing
         return torch.mean(self.I_test * (self.R_test - self.U @ self.V.T) ** 2) ** 0.5
 
+def calculate_loss(model, rmses, transmissions, sig):
+    temp_rmse = 0
+    temp_transmission = 0
+    for node in model.nodes:
+        temp_rmse += node.model.rmse().item()
+    temp_U = None
+    temp_V = None
+    
+    with torch.no_grad():
+        if sig == "LSP2P"
+            for node in model.nodes:
+                u = node.model.U.detach().clone()
+                v = node.model.V.detach().clone()
+                if temp_U is None:
+                    temp_U = u
+                    temp_V = v
+                else:
+                    temp_U += u
+                    temp_V += v
+                temp_transmission += sys.getsizeof(node.model.U) + sys.getsizeof(node.model.V)
+            temp_U /= len(model.nodes)
+            temp_V /= len(model.nodes)
+            temp_transmission += sys.getsizeof(temp_U) + sys.getsizeof(temp_V)
+        else:
+                for node in model.nodes:
+                    temp_transmission += node.transmission_quantity
+    
+    rmses.append(temp_rmse / len(model.nodes))
+    transmissions.append(temp_transmission)
+def execute_every(model, seconds, rmses, transmissions, sig):
+    while True:
+        calculate_loss(model, rmses, transmissions, sig)
+        time.sleep(seconds)
 class LSP2P(nn.Module):
     def __init__(self, user_item_pairs: list, latent_dim = 500, update_epochs = 100, lr = 1e-4, probs_for_send = 0.5, node_number = 10, device = torch.device('cuda'), 
                 train_set_size = 0.8, momentum = 0, weight_decay = 0, cluster_number = 3) -> None:
@@ -240,8 +280,13 @@ class LSP2P(nn.Module):
         for pair in pairs:
             R[self.users.index(pair[0]), self.items.index(pair[1])] = pair[2]
         return R
-    def train(self, epochs):
+
+        
+    def train(self, epochs, evaluate_every):
         self.transmission = []
+        self.regular_rmses = []
+        self.regular_transmission = []
+        th = threading.Thread(target = execute_every, args = (self, evaluate_every, self.regular_rmses, self.regular_transmission, "LSP2P"))
         with tqdm(total = epochs) as t:
             for epoch in range(epochs):
                 temp_rmse = 0
