@@ -47,11 +47,12 @@ class GossipLearning(nn.Module):
         for pair in pairs:
             R[self.users.index(pair[0]), self.items.index(pair[1])] = pair[2]
         return R
-    def train(self, epochs = 100):
+    def train(self, epochs = 100, evaluate_every = 5):
+        self.start_training = True
         self.transmission = []
         self.regular_rmses = []
         self.regular_transmission = []
-        th = threading.Thread(target = execute_every, args = (self, evaluate_every, self.regular_rmses, self.regular_transmission, "GossipLearning"))
+        th = threading.Thread(target = execute_every, args = (self, evaluate_every, self.regular_rmses, self.regular_transmission, "GossipLearning")).start()
         with tqdm(total = epochs) as t:
             for epoch in range(epochs):
                 # This code block is the main training loop for the Gossip Learning algorithm.
@@ -66,6 +67,7 @@ class GossipLearning(nn.Module):
                 t.update()
                 self.rmses.append(temp_rmse / len(self.nodes))
                 self.transmission.append(temp_transmission)
+        self.start_training = False
         self.transmission = np.cumsum(self.transmission)
 class Node(nn.Module):
     def __init__(self, id, latent_dim, user_dim, item_dim, R: np.array, R_test: np.array, nodes, update_epochs = 100, lr = 1e-4, probs_for_send = 0.5, device = torch.device('cuda'), momentum = 0, weight_decay = 0) -> None:
@@ -80,6 +82,7 @@ class Node(nn.Module):
         self.probs_send = probs_for_send # probability to select and send model in gossip learning
         self.device = device
         self.model.train(epochs = self.update_epochs, learning_rate = self.lr, device = device) # train PMF for the first time
+        self.transmission_quantity = 0
     def send_model(self):
         # This code block is responsible for sending the model parameters (U, V, age) to neighboring
         # nodes in the Gossip Learning algorithm. It loops through all the nodes in the network, and
@@ -94,7 +97,7 @@ class Node(nn.Module):
         for node in self.nodes:
             if np.random.random() > self.probs_send and node.id != self.id: # if the random number is greater than the probability of sending and the node is not the current node, send the model to the neighboring node
                 node.receive_model(self.model.U, self.model.V, self.model.age) # receive model from the neighboring node, and update the current node's model
-                transmission_quantity += (sys.getsizeof(self.model.U) + sys.getsizeof(self.model.V) + sys.getsizeof(self.model.age)) # update the total transmission quantity
+                self.transmission_quantity += (sys.getsizeof(self.model.U) + sys.getsizeof(self.model.V) + sys.getsizeof(self.model.age)) # update the total transmission quantity
                 
         return self.transmission_quantity
     def update(self):
@@ -177,7 +180,7 @@ def calculate_loss(model, rmses, transmissions, sig):
     temp_V = None
     
     with torch.no_grad():
-        if sig == "LSP2P"
+        if sig == "LSP2P":
             for node in model.nodes:
                 u = node.model.U.detach().clone()
                 v = node.model.V.detach().clone()
@@ -198,7 +201,7 @@ def calculate_loss(model, rmses, transmissions, sig):
     rmses.append(temp_rmse / len(model.nodes))
     transmissions.append(temp_transmission)
 def execute_every(model, seconds, rmses, transmissions, sig):
-    while True:
+    while model.start_training:
         calculate_loss(model, rmses, transmissions, sig)
         time.sleep(seconds)
 class LSP2P(nn.Module):
@@ -283,10 +286,11 @@ class LSP2P(nn.Module):
 
         
     def train(self, epochs, evaluate_every):
+        self.start_training = True
         self.transmission = []
         self.regular_rmses = []
         self.regular_transmission = []
-        th = threading.Thread(target = execute_every, args = (self, evaluate_every, self.regular_rmses, self.regular_transmission, "LSP2P"))
+        th = threading.Thread(target = execute_every, args = (self, evaluate_every, self.regular_rmses, self.regular_transmission, "LSP2P")).start()
         with tqdm(total = epochs) as t:
             for epoch in range(epochs):
                 temp_rmse = 0
@@ -323,5 +327,6 @@ class LSP2P(nn.Module):
                 for node in self.nodes:
                     node.merge(temp_U, temp_V, node.model.age / 100)
                 self.transmission.append(temp_transmission)
+        self.start_training = False
         self.transmission = np.cumsum(self.transmission)
     

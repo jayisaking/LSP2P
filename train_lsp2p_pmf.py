@@ -46,9 +46,9 @@ def main(args):
     lsp2p = LSP2P(user_item_pairs = pairs, latent_dim = args.latent_dim, update_epochs = args.update_epochs, lr = args.lr, 
                   probs_for_send = args.probs_for_send, node_number = args.node_number, device = device, train_set_size = args.train_set_size, 
                   momentum = args.momentum, weight_decay = args.weight_decay, cluster_number = args.cluster_number)
-    lsp2p.train(epochs = args.epochs)
+    lsp2p.train(epochs = args.epochs, evaluate_every = args.evaluate_every)
 
-    plt.plot(np.arange(0, len(lsp2p.regular_transmission) * args.evaluate_every, args.evaluate_every), lsp2p.regular_transmission)
+    plt.plot(np.arange(0, len(lsp2p.regular_transmission) * args.evaluate_every, args.evaluate_every), np.cumsum(lsp2p.regular_transmission))
     plt.xlabel("Seconds")
     plt.ylabel("Bytes Transmitted")
     plt.savefig(args.transmission_graph_file)

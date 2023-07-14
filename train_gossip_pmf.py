@@ -47,7 +47,7 @@ def main(args):
                         train_set_size = args.train_set_size, momentum = args.momentum, weight_decay = args.weight_decay)
     gl.train(epochs = args.epochs, evaluate_every = args.evaluate_every)
 
-    plt.plot(np.arange(0, len(gl.regular_transmission) * args.evaluate_every, args.evaluate_every), gl.regular_transmission)
+    plt.plot(np.arange(0, len(gl.regular_transmission) * args.evaluate_every, args.evaluate_every), np.cumsum(gl.regular_transmission))
     plt.xlabel("Seconds")
     plt.ylabel("Bytes Transmitted")
     plt.savefig(args.transmission_graph_file)
