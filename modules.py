@@ -139,15 +139,15 @@ class PMF(nn.Module):
         self.momentum = momentum
         self.weight_decay = weight_decay
     def to_device(self, device = torch.device('cuda')):
-        self.I = self.I.to(device)
-        self.R = self.R.to(device)
-        self.U = self.U.to(device)
-        self.V = self.V.to(device)
-        self.R_test = self.R_test.to(device)
-        self.I_test = self.I_test.to(device)
-        self.r_std = self.r_std.to(device)
-        self.u_std = self.u_std.to(device)
-        self.v_std = self.v_std.to(device)
+        self.I = self.I.to(torch.float32).to(device)
+        self.R = self.R.to(torch.float32).to(device)
+        self.U = self.U.to(torch.float32).to(device)
+        self.V = self.V.to(torch.float32).to(device)
+        self.R_test = self.R_test.to(torch.float32).to(device)
+        self.I_test = self.I_test.to(torch.float32).to(device)
+        self.r_std = self.r_std.to(torch.float32).to(device)
+        self.u_std = self.u_std.to(torch.float32).to(device)
+        self.v_std = self.v_std.to(torch.float32).to(device)
     def train(self, epochs, learning_rate = 1e-4, device = torch.device('cuda')):
        # This is the training method for the PMF (Probabilistic Matrix Factorization) model. It takes
        # in the number of epochs to train for (`epochs`), the learning rate (`learning_rate`), and the

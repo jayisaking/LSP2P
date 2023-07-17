@@ -31,6 +31,7 @@ def get_args_parser():
     parser.add_argument('--cluster_number', default = 2, help = "number of clusters", type = int)
     parser.add_argument('--log_file', default = "lsp2p_log.csv", type = str)
     parser.add_argument('--evaluate_every', default = 5, help = "evaluate every n seconds", type = int)
+    parser.add_argument('--random_seed', default = 0, help = "random seed", type = int)
     args = parser.parse_args()
     return args
 def main(args):
@@ -40,6 +41,7 @@ def main(args):
     # then used to load the contents of the file into the variable `pairs`.
     with open(args.user_item_pairs_path, 'rb') as f:
         pairs = pickle.load(f)
+    random.seed(args.random_seed)
     random.shuffle(pairs)
     pairs = pairs[:int(len(pairs) * args.used_data_size)]
     device = torch.device(args.device)
