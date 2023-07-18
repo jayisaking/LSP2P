@@ -62,7 +62,7 @@ def main(args):
     plt.clf()
     
     ## write rmses and transmission to csv file
-    df = pd.DataFrame({'transmission': gl.regular_transmission, 'rmses': gl.regular_rmses})
+    df = pd.DataFrame({'rmses': gl.regular_rmses, 'transmission': np.cumsum(gl.regular_transmission)})
     df.to_csv(args.log_file, index = False)
     
 if __name__ == '__main__':

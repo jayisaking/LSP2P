@@ -121,8 +121,8 @@ class PMF(nn.Module):
         self.user_dim = user_dim
         self.item_dim = item_dim
         self.latent_dim = latent_dim
-        self.U = nn.parameter.Parameter(torch.zeros((user_dim, latent_dim)))
-        self.V = nn.parameter.Parameter(torch.zeros((item_dim, latent_dim)))
+        self.U = nn.parameter.Parameter(torch.rand(user_dim, latent_dim))
+        self.V = nn.parameter.Parameter(torch.rand(item_dim, latent_dim))
         self.R = torch.tensor(R, requires_grad = False)
         self.I = (self.R >= 0).to(torch.int32)
         self.I.requires_grad = False

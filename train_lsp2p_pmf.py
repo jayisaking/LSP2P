@@ -63,7 +63,7 @@ def main(args):
     plt.clf()
     
     # Write rmses and transmission to log file
-    log = pd.DataFrame({"rmses": lsp2p.regular_rmses, "transmission": lsp2p.regular_transmission})
+    log = pd.DataFrame({"rmses": lsp2p.regular_rmses, "transmission": np.cumsum(lsp2p.regular_transmission)})
     log.to_csv(args.log_file, index = False)
 if __name__ == '__main__':
     main(get_args_parser())
